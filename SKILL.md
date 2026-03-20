@@ -1,0 +1,326 @@
+---
+name: blog-post
+description: "Full-stack blog post production — turns a topic, idea, or brief into a complete publishing package across written, social, and multimedia surfaces. Generates broomva.tech .mdx posts (or Substack/other long-form), X posts and threads, LinkedIn posts, Instagram posts and reel scripts, plus multimedia asset plans (images, video, audio, GIFs). Outputs a structured content package to /broomva/posts/. Use when: (1) creating a new blog post or article, (2) turning an idea into multi-platform content, (3) producing a content package for a topic, (4) writing and distributing a post across channels, (5) generating social content from a long-form piece. Triggers on: 'blog post', 'new post', 'write a post about', 'content package', 'publish about', 'create post', 'blog-post'."
+---
+
+# Blog Post — Full-Stack Content Production
+
+Turn a topic into a complete, strategy-aware publishing package: long-form post + social adaptations + multimedia assets.
+
+## Compounding Skills
+
+This skill **orchestrates** — it does not re-implement what already exists:
+
+| Skill | Role in Pipeline |
+|-------|-----------------|
+| `/content-creation` | Storytelling frameworks, visual content strategy, social distribution patterns, AI asset generation (Nano Banana, Veo 3.1, TTS), Remotion video |
+| `/deep-research` | Multi-source research when topic requires verified claims or data |
+| `/agent-browser` | Screenshots, reference extraction, web research |
+| `/pencil` | Design social cards, carousel slides, diagrams |
+| `/arcan-glass` | BroomVA brand styling for visual assets |
+| `/remotion-best-practices` | Video composition, spring animations, sequencing |
+| `/prompt-library` | Reusable prompts for content generation |
+| `/competitor-intel` | Market context when writing about products or strategy |
+
+**Rule**: Before generating content for any phase, check if a compounding skill handles it better. Delegate, don't duplicate.
+
+## Pipeline Overview
+
+```
+BRIEF → RESEARCH → ANGLE → OUTLINE → LONG-FORM → ADAPT → MEDIA → PACKAGE
+```
+
+**8 phases, each produces a file in the output package.**
+
+## Phase 0: Content Brief Intake
+
+Gather or construct a content brief. See [templates/brief.md](templates/brief.md) for the template.
+
+**Required fields:**
+- `topic` — What this post is about
+- `intent` — Why this post exists (educate, persuade, announce, reflect, document)
+- `audience` — Who reads this (developers, founders, general, specific community)
+
+**Optional fields:**
+- `platforms` — Target channels (default: all). Options: `broomva-tech`, `substack`, `x-post`, `x-thread`, `linkedin`, `instagram-post`, `instagram-reel`
+- `tone` — Voice (default: confident-technical). Options: `conversational`, `academic`, `provocative`, `reflective`, `storytelling`
+- `references` — URLs, papers, prior posts to build on
+- `media` — Desired outputs: `png`, `mp4`, `gif`, `mp3` (default: all)
+- `cta` — What should the reader do after? (follow, subscribe, try, share, discuss)
+- `destination` — Primary long-form target (default: `broomva-tech`). Options: `substack`, `medium`, `dev-to`, `hashnode`
+- `slug` — URL-friendly identifier (auto-generated from topic if omitted)
+
+**If the user provides only a topic**, infer reasonable defaults and confirm before proceeding.
+
+## Phase 1: Research & Enrichment
+
+**When to research**: If the brief includes references, data claims, or the topic requires external validation.
+
+**How to research:**
+1. Use `/deep-research` for topics needing 5+ verified sources
+2. Use `/agent-browser` to extract content from reference URLs
+3. Use web search for current data, trends, or competitor context
+4. Use `/competitor-intel` if topic involves market positioning
+
+**Output**: `research.md` — key findings, sources, data points, quotes. Keep it factual and citable.
+
+**When to skip**: Personal reflections, opinion pieces, internal documentation — research is optional, not mandatory.
+
+## Phase 2: Angle & Narrative Selection
+
+The angle is what makes content *intentional* rather than generic. It answers: "Of all the things I could say about this topic, what specific lens am I using and why?"
+
+**Angle selection criteria:**
+1. **Audience gap** — What does this audience need that isn't being said?
+2. **Unique evidence** — What data or experience do I have that others don't?
+3. **Contrarian potential** — Is there a widely-held belief I can challenge with evidence?
+4. **Timeliness** — Is there a current event or trend that makes this relevant now?
+5. **Story potential** — Is there a transformation narrative (before → after)?
+
+**Framework selection** (from `/content-creation` storytelling references):
+
+| Content Type | Best Framework | When to Use |
+|-------------|---------------|-------------|
+| Case study / results | **PSI** (Problem-Solution-Impact) | Showing quantified outcomes |
+| Industry take / opinion | **ABT** (And-But-Therefore) | Challenging conventional wisdom |
+| Technical deep dive | **1-3-1** (One idea, three evidence, one takeaway) | Teaching a concept |
+| Product / launch story | **Pixar Spine** | Transformation narrative |
+| Data-driven insight | **Data Arc** (Context-Tension-Resolution) | Leading with surprising numbers |
+| Decision documentation | **So-What** (What-Why-Action) | Internal or reflective posts |
+
+**Output**: Update `outline.md` with the chosen angle, framework, and rationale.
+
+## Phase 3: Outline Generation
+
+Build a structured outline from the angle. This is the *architectural blueprint* — all downstream content derives from it.
+
+**Outline structure:**
+```
+# Title Options (3 candidates, pick best)
+
+## Hook (1-2 sentences — the "why should I care" opener)
+
+## Sections
+1. [Section name] — [1-line purpose]
+   - Key point A
+   - Key point B
+   - Evidence/data to include
+   - Media placement: [image/video/gif opportunity]
+
+2. [Section name] — [1-line purpose]
+   ...
+
+## Closing
+- Memorable takeaway (one line)
+- CTA alignment with brief
+
+## Media Inventory
+- Hero image concept
+- Supporting images (one per ~300 words)
+- Video opportunity (if applicable)
+- GIF opportunity (if applicable)
+- Audio narration (y/n)
+```
+
+**Output**: `outline.md`
+
+## Phase 4: Long-Form Content Generation
+
+Write the primary long-form post. Target platform determines format.
+
+### broomva.tech (default)
+
+Use the [templates/broomva-tech-post.mdx](templates/broomva-tech-post.mdx) template.
+
+**Frontmatter schema:**
+```yaml
+---
+title: "Post Title"
+summary: "One-sentence summary for cards and SEO"
+date: YYYY-MM-DD
+published: true
+tags:
+  - tag1
+  - tag2
+audio: /audio/writing/{slug}.mp3  # if audio generated
+---
+```
+
+**Content conventions:**
+- Use standard Markdown (GFM) — the engine renders via remark + remark-gfm
+- Embed video: `<video src="/images/writing/{slug}/video.mp4" autoplay muted loop playsinline style="width:100%;border-radius:8px;margin-bottom:1.5rem"></video>`
+- Images: `![Alt text](/images/writing/{slug}/image-name-opt.png)`
+- Figures: `<figure><img src="..." alt="..." /><figcaption>Caption</figcaption></figure>`
+- Tables: Standard GFM tables (styled by Tailwind prose)
+- No custom MDX components needed — raw HTML works
+
+### Substack / Alternative Platforms
+
+Use [templates/substack-post.md](templates/substack-post.md). Standard Markdown, no frontmatter beyond title/subtitle. Adjust image paths to be relative or hosted URLs.
+
+**Output**: `broomva-tech-post.mdx` and/or `substack-post.md` (based on `destination` in brief)
+
+## Phase 5: Cross-Platform Adaptation
+
+**Critical rule**: Each platform gets *native* content, not a copy-paste resize. The core *message* is shared; the *expression* is platform-native.
+
+### Adaptation Matrix
+
+| Platform | Length | Format | Hook Style | Media | CTA Style |
+|----------|--------|--------|-----------|-------|----------|
+| X post | 280 chars | Single tweet | Punchy stat or claim | 1 image | Implied (engagement) |
+| X thread | 5-8 tweets | Numbered thread | Scale proof or contrarian | Image every 2-3 tweets | Link in final tweet |
+| LinkedIn | 1300 chars | Paragraphs + bullets | First 210 chars = hook | 1 image or document carousel | Direct ask |
+| Instagram post | 2200 chars caption | Caption + carousel (1080x1350) | Visual-first, caption supports | 1-10 carousel images | Save/share/link in bio |
+| Instagram reel | 15-60s script | Video script + captions | 3-second hook | 9:16 vertical video | Follow/link in bio |
+
+### Platform-Specific Content Generation
+
+See [references/platform-adaptation.md](references/platform-adaptation.md) for detailed per-platform strategies.
+
+**X Post** — Extract the single most surprising or provocative insight. Make it self-contained. No links unless CTA.
+
+**X Thread** — Re-tell the story in tweet-sized beats. Not an outline — each tweet must stand alone while building momentum. Hook formula from `/content-creation`: spend 50% of effort on tweet 1.
+
+**LinkedIn** — Professional framing. Lead with insight or contrarian take in first 210 chars (before "See More" fold). Use bullet lists for key takeaways. 3-5 hashtags max.
+
+**Instagram Post** — Design a carousel: cover slide with hook, 1 insight per slide (flashcard style, not paragraphs), stat slide, CTA slide. Caption tells the story; slides show the highlights.
+
+**Instagram Reel** — Write a script with: 3-second visual hook, problem statement (5s), key insight (10-15s), evidence or demo (10-15s), CTA (5s). Vertical 9:16 format.
+
+**Output**: `x-post.md`, `x-thread.md`, `linkedin-post.md`, `instagram-post.md`, `instagram-reel.md`
+
+## Phase 6: Multimedia Production
+
+Plan and produce media assets. See [references/multimedia-production.md](references/multimedia-production.md).
+
+### Asset Types
+
+| Asset | Tool | When |
+|-------|------|------|
+| Hero image / social card | Nano Banana (`gemini-3.1-flash-image`) | Always — every post needs a hero |
+| Supporting images | Nano Banana or `/agent-browser` screenshots | 1 per ~300 words |
+| Animated GIF | ffmpeg from video or ImageMagick from frames | UI demos, flow previews |
+| Audio narration | kokoro-tts / Edge TTS / ElevenLabs | If `mp3` in media targets |
+| Video composition | Remotion + AI clips (Veo 3.1) | If `mp4` in media targets |
+| Instagram carousel PNGs | `/pencil` MCP | If Instagram in platforms |
+
+### Media Prompt Generation
+
+For each planned asset, generate a specific AI prompt in `media/image-prompts.md`:
+- Describe the visual concept tied to the content it accompanies
+- Include style direction (dark theme, technical, minimal, etc.)
+- Specify dimensions and aspect ratio per platform
+
+### Audio Script
+
+If audio is targeted, extract the post body text and write a narration-ready script in `media/audio-script.md`. Strip markdown formatting, add natural pauses, and note pronunciation guides for technical terms.
+
+### Video Script
+
+If video is targeted, write a Remotion-compatible composition outline in `media/video-script.md`:
+- Scene breakdown (title, stats, screenshots, workflow, closing)
+- Duration per scene
+- Transition style
+- Asset references (which images/clips to use)
+
+**Output**: `media/` directory with prompt files and any generated assets
+
+## Phase 7: Strategy & Distribution
+
+Generate strategy documents for the content package.
+
+**Output files in `strategy/`:**
+- `audience.md` — Target audience profile, what they care about, where they are
+- `platform-strategy.md` — Per-platform approach, posting time, format rationale
+- `distribution-plan.md` — Publishing sequence (which platform first, timing gaps, cross-linking)
+- `cta.md` — Call-to-action strategy aligned across all channels
+
+### Distribution Sequencing
+
+Recommended order (adjust per strategy):
+1. **Blog post** first (canonical URL)
+2. **X thread** within 1 hour (drives initial engagement)
+3. **LinkedIn** same day (professional audience, different peak hours)
+4. **Instagram carousel** next day (visual audience, different consumption pattern)
+5. **Instagram reel** 2-3 days later (extends content lifecycle)
+6. **X post** (standalone) as engagement trigger mid-week
+
+## Output Structure
+
+Each invocation creates a package at `/broomva/posts/{YYYY-MM-DD}-{slug}/`:
+
+```
+{YYYY-MM-DD}-{slug}/
+├── README.md                    # Package manifest (what's inside, status, links)
+├── brief.md                     # Content brief (input)
+├── research.md                  # Research notes (if applicable)
+├── outline.md                   # Content outline with angle + framework
+├── broomva-tech-post.mdx        # Primary long-form (broomva.tech)
+├── substack-post.md             # Alternative long-form (if requested)
+├── x-post.md                    # X single post
+├── x-thread.md                  # X thread (5-8 tweets)
+├── linkedin-post.md             # LinkedIn post
+├── instagram-post.md            # Instagram caption + carousel spec
+├── instagram-reel.md            # Reel script/concept
+├── media/
+│   ├── image-prompts.md         # AI image generation prompts
+│   ├── audio-script.md          # TTS narration script
+│   ├── video-script.md          # Video composition script
+│   ├── gif-concept.md           # GIF animation concept
+│   ├── hero.png                 # Hero/social card (generated)
+│   ├── thumbnails/              # Per-platform thumbnails
+│   ├── png/                     # Static images
+│   ├── gif/                     # Animated GIFs
+│   ├── mp3/                     # Audio narration
+│   └── mp4/                     # Video files
+└── strategy/
+    ├── audience.md              # Target audience profile
+    ├── platform-strategy.md     # Per-platform approach
+    ├── distribution-plan.md     # Publishing schedule + sequence
+    └── cta.md                   # Call-to-action strategy
+```
+
+## Agent Behavior
+
+### On Invocation
+
+1. **Parse intent** — Extract topic, audience, intent from user message
+2. **Check brief completeness** — If only topic provided, propose defaults and confirm
+3. **Create output directory** — `mkdir -p /broomva/posts/{date}-{slug}/media/{thumbnails,png,gif,mp3,mp4} /broomva/posts/{date}-{slug}/strategy`
+4. **Execute phases 0-7 sequentially** — Each phase produces its output file
+5. **Generate media assets** — Use available tools (Nano Banana, ffmpeg, kokoro-tts). If tools unavailable, leave prompt files for manual generation
+6. **Copy to broomva.tech** — If destination is broomva-tech, also copy `.mdx` to `broomva.tech/apps/chat/content/writing/{slug}.mdx` and images to `broomva.tech/apps/chat/public/images/writing/{slug}/`
+7. **Report** — Summarize what was created, what needs manual action (asset generation, publishing)
+
+### Graceful Degradation
+
+- **No GEMINI_API_KEY?** → Generate image prompts but skip generation; note in README
+- **No ffmpeg/Remotion?** → Write video/GIF scripts but skip rendering; note in README
+- **No TTS engine?** → Write audio script but skip narration; note in README
+- **Never fail silently** — Always explain what was skipped and why
+
+### Quality Gates
+
+Before completing, validate:
+- [ ] Every platform adaptation has a unique hook (not copy-pasted)
+- [ ] Long-form post has at least 3 media placement points
+- [ ] X thread has 5-8 tweets with images planned every 2-3 tweets
+- [ ] Instagram carousel has cover + 8-12 content slides specified
+- [ ] LinkedIn hook is ≤ 210 characters
+- [ ] CTA is consistent across channels but adapted per platform
+- [ ] All file paths in README match actual files created
+- [ ] No placeholder text remains in any output file
+
+See [references/quality-checklist.md](references/quality-checklist.md) for the full validation checklist.
+
+## Quick Start
+
+```
+User: /blog-post "Building an Agent OS in Rust" — targeting developers,
+      intent is to educate and attract contributors, provocative tone
+
+Agent: [Creates brief → researches if needed → selects ABT angle →
+       outlines → writes long-form → adapts for X/LinkedIn/IG →
+       generates media prompts → packages under /broomva/posts/2026-03-20-agent-os-rust/]
+```
