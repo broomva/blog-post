@@ -27,10 +27,10 @@ This skill **orchestrates** — it does not re-implement what already exists:
 ## Pipeline Overview
 
 ```
-BRIEF → RESEARCH → ANGLE → OUTLINE → LONG-FORM → ADAPT → MEDIA → PACKAGE
+BRIEF → RESEARCH → ANGLE → OUTLINE → LONG-FORM → ADAPT → MEDIA → STRATEGY → PUBLISH
 ```
 
-**8 phases, each produces a file in the output package.**
+**9 phases, each produces a file or action in the output package.**
 
 ## Phase 0: Content Brief Intake
 
@@ -226,7 +226,7 @@ If video is targeted, write a Remotion-compatible composition outline in `media/
 
 **Output**: `media/` directory with prompt files and any generated assets
 
-## Phase 7: Strategy & Distribution
+## Phase 7: Strategy & Distribution Planning
 
 Generate strategy documents for the content package.
 
@@ -245,6 +245,141 @@ Recommended order (adjust per strategy):
 4. **Instagram carousel** next day (visual audience, different consumption pattern)
 5. **Instagram reel** 2-3 days later (extends content lifecycle)
 6. **X post** (standalone) as engagement trigger mid-week
+
+## Phase 8: Publishing & Distribution
+
+Execute the distribution plan by publishing content to each platform. Uses CLI tools and REST APIs — no third-party services.
+
+### Platform Connectors
+
+| Platform | Tool | Auth | Capabilities |
+|----------|------|------|-------------|
+| **X/Twitter** | `xurl` CLI | OAuth2 (configured via `xurl auth oauth2`) | Post, thread, reply, media upload, like, repost |
+| **LinkedIn** | `curl` + REST API | OAuth2 bearer token | Text posts, image posts, document carousels |
+| **Instagram** | `curl` + Meta Graph API | Business account + access token | Photo posts, carousel posts, reel uploads |
+| **broomva.tech** | `cp` + `git` + `gh` | Git credentials | Copy .mdx + assets, create PR |
+
+### X Publishing (via xurl)
+
+**Prerequisite check**: `xurl whoami` — if 401, prompt user to run `xurl auth oauth2`.
+
+**Single post**:
+```bash
+# Text only
+xurl post "$(cat x-post.md | head -1)"
+
+# With image
+xurl post "$(cat x-post.md | head -1)" --media media/thumbnails/x-card.png
+```
+
+**Thread** (parse x-thread.md, post sequentially):
+```bash
+# Extract tweet 1 (the hook), post it, capture the tweet ID
+FIRST_ID=$(xurl post "Tweet 1 text" --media media/png/hero.png 2>&1 | jq -r '.data.id')
+
+# Reply chain for remaining tweets
+xurl reply $FIRST_ID "Tweet 2 text"
+# ... continue for each tweet
+```
+
+**Thread parsing logic**: Read `x-thread.md`, split on `### N/N` headers, extract text between headers, identify `📸 Image:` lines for media attachment. See [references/publishing-automation.md](references/publishing-automation.md).
+
+### LinkedIn Publishing (via curl)
+
+**Prerequisite**: OAuth2 access token stored in `~/.config/blog-post/linkedin-token`.
+
+```bash
+LINKEDIN_TOKEN=$(cat ~/.config/blog-post/linkedin-token)
+LINKEDIN_URN=$(cat ~/.config/blog-post/linkedin-urn)
+
+curl -s -X POST "https://api.linkedin.com/v2/ugcPosts" \
+  -H "Authorization: Bearer $LINKEDIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"author\": \"urn:li:person:$LINKEDIN_URN\",
+    \"lifecycleState\": \"PUBLISHED\",
+    \"specificContent\": {
+      \"com.linkedin.ugc.ShareContent\": {
+        \"shareCommentary\": { \"text\": \"$(cat linkedin-post.md | sed '1,2d' | head -40)\" },
+        \"shareMediaCategory\": \"NONE\"
+      }
+    },
+    \"visibility\": { \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\" }
+  }"
+```
+
+### Instagram Publishing (via Meta Graph API)
+
+**Prerequisite**: Business/Creator account, access token in `~/.config/blog-post/instagram-token`.
+
+```bash
+IG_TOKEN=$(cat ~/.config/blog-post/instagram-token)
+IG_USER_ID=$(cat ~/.config/blog-post/instagram-user-id)
+
+# Step 1: Create media container (image must be publicly hosted)
+CONTAINER_ID=$(curl -s -X POST \
+  "https://graph.facebook.com/v19.0/$IG_USER_ID/media" \
+  -d "image_url=https://broomva.tech/images/writing/{slug}/hero.png" \
+  -d "caption=$(cat instagram-post.md | sed -n '/^## Caption/,$ p' | tail -n+2)" \
+  -d "access_token=$IG_TOKEN" | jq -r '.id')
+
+# Step 2: Publish
+curl -s -X POST \
+  "https://graph.facebook.com/v19.0/$IG_USER_ID/media_publish" \
+  -d "creation_id=$CONTAINER_ID" \
+  -d "access_token=$IG_TOKEN"
+```
+
+### broomva.tech Publishing
+
+```bash
+SLUG="{slug}"
+# Copy post and assets
+cp broomva-tech-post.mdx ~/broomva/broomva.tech/apps/chat/content/writing/$SLUG.mdx
+mkdir -p ~/broomva/broomva.tech/apps/chat/public/images/writing/$SLUG/
+cp media/png/* ~/broomva/broomva.tech/apps/chat/public/images/writing/$SLUG/
+# Copy audio if exists
+[ -f media/mp3/narration.mp3 ] && \
+  cp media/mp3/narration.mp3 ~/broomva/broomva.tech/apps/chat/public/audio/writing/$SLUG.mp3
+# Create PR
+cd ~/broomva/broomva.tech
+git checkout -b content/$SLUG
+git add apps/chat/content/writing/$SLUG.mdx apps/chat/public/images/writing/$SLUG/
+git commit -m "content: add $SLUG"
+git push -u origin content/$SLUG
+gh pr create --title "content: $SLUG" --body "New blog post"
+```
+
+### Publishing Workflow
+
+When the user says "publish" or "distribute" after a content package is ready:
+
+1. **Check available connectors** — Run `xurl whoami`, check for LinkedIn/IG tokens
+2. **Report what can be published** — List platforms with ✅ (ready) or ❌ (needs setup)
+3. **Confirm with user** — Show what will be posted to each platform, ask for go-ahead
+4. **Execute in sequence** — Follow the distribution plan order
+5. **Report results** — Show post URLs/IDs for each platform, note any failures
+6. **Update README.md** — Mark published platforms with URLs
+
+### Credential Storage
+
+Store platform tokens in `~/.config/blog-post/` (gitignored, never committed):
+```
+~/.config/blog-post/
+├── linkedin-token       # LinkedIn OAuth2 access token
+├── linkedin-urn         # LinkedIn member URN
+├── instagram-token      # Meta/Instagram access token
+└── instagram-user-id    # Instagram Business account ID
+```
+
+X credentials are managed by `xurl` internally (stored in its own keychain).
+
+### Graceful Degradation
+
+- **No xurl auth?** → Generate post text but skip publishing; show `xurl auth oauth2` instructions
+- **No LinkedIn token?** → Generate post but skip; show OAuth setup steps
+- **No Instagram token?** → Generate post but skip; show Meta app setup steps
+- **Always confirm before posting** — Never auto-publish without explicit user approval
 
 ## Output Structure
 
@@ -291,7 +426,8 @@ Each invocation creates a package at `/broomva/posts/{YYYY-MM-DD}-{slug}/`:
 4. **Execute phases 0-7 sequentially** — Each phase produces its output file
 5. **Generate media assets** — Use available tools (Nano Banana, ffmpeg, kokoro-tts). If tools unavailable, leave prompt files for manual generation
 6. **Copy to broomva.tech** — If destination is broomva-tech, also copy `.mdx` to `broomva.tech/apps/chat/content/writing/{slug}.mdx` and images to `broomva.tech/apps/chat/public/images/writing/{slug}/`
-7. **Report** — Summarize what was created, what needs manual action (asset generation, publishing)
+7. **Publish (Phase 8)** — If user says "publish" or "distribute", execute the distribution plan via `xurl` (X), `curl` (LinkedIn/Instagram), and `git` (broomva.tech). Always confirm before posting.
+8. **Report** — Summarize what was created, what was published (with URLs), what needs manual action
 
 ### Graceful Degradation
 
