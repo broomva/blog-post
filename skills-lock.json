@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "blog-post": {
+      "source": "broomva/blog-post",
+      "sourceType": "github",
+      "computedHash": "1489ee54851b9920bc63d3bf53f63f212187a15471c6de0e99783039df4ce60e"
+    }
+  }
+}
