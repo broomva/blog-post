@@ -292,19 +292,18 @@ xurl reply $FIRST_ID "Tweet 2 text"
 LINKEDIN_TOKEN=$(cat ~/.config/blog-post/linkedin-token)
 LINKEDIN_URN=$(cat ~/.config/blog-post/linkedin-urn)
 
-curl -s -X POST "https://api.linkedin.com/v2/ugcPosts" \
+# Uses Posts API v2 (ugcPosts was deprecated in 2024)
+curl -s -X POST "https://api.linkedin.com/v2/posts" \
   -H "Authorization: Bearer $LINKEDIN_TOKEN" \
   -H "Content-Type: application/json" \
+  -H "LinkedIn-Version: 202401" \
+  -H "X-Restli-Protocol-Version: 2.0.0" \
   -d "{
     \"author\": \"urn:li:person:$LINKEDIN_URN\",
-    \"lifecycleState\": \"PUBLISHED\",
-    \"specificContent\": {
-      \"com.linkedin.ugc.ShareContent\": {
-        \"shareCommentary\": { \"text\": \"$(cat linkedin-post.md | sed '1,2d' | head -40)\" },
-        \"shareMediaCategory\": \"NONE\"
-      }
-    },
-    \"visibility\": { \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\" }
+    \"commentary\": \"$(cat linkedin-post.md | sed '1,2d' | head -40)\",
+    \"visibility\": \"PUBLIC\",
+    \"distribution\": { \"feedDistribution\": \"MAIN_FEED\" },
+    \"lifecycleState\": \"PUBLISHED\"
   }"
 ```
 
@@ -318,14 +317,14 @@ IG_USER_ID=$(cat ~/.config/blog-post/instagram-user-id)
 
 # Step 1: Create media container (image must be publicly hosted)
 CONTAINER_ID=$(curl -s -X POST \
-  "https://graph.facebook.com/v19.0/$IG_USER_ID/media" \
+  "https://graph.instagram.com/v19.0/$IG_USER_ID/media" \
   -d "image_url=https://broomva.tech/images/writing/{slug}/hero.png" \
   -d "caption=$(cat instagram-post.md | sed -n '/^## Caption/,$ p' | tail -n+2)" \
   -d "access_token=$IG_TOKEN" | jq -r '.id')
 
 # Step 2: Publish
 curl -s -X POST \
-  "https://graph.facebook.com/v19.0/$IG_USER_ID/media_publish" \
+  "https://graph.instagram.com/v19.0/$IG_USER_ID/media_publish" \
   -d "creation_id=$CONTAINER_ID" \
   -d "access_token=$IG_TOKEN"
 ```

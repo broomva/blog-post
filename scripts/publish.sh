@@ -181,25 +181,32 @@ publish_linkedin() {
     # Extract post body (between ## Post and ## Post Metadata)
     POST_BODY=$(sed -n '/^## Post$/,/^## Post Metadata$/{ /^## /d; p; }' "$PACKAGE_DIR/linkedin-post.md" | sed '/^$/{ N; /^\n$/d; }')
 
-    RESULT=$(curl -s -X POST "https://api.linkedin.com/v2/ugcPosts" \
+    RESULT=$(curl -s -w "\n%{http_code}" -X POST "https://api.linkedin.com/v2/posts" \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
+        -H "LinkedIn-Version: 202401" \
+        -H "X-Restli-Protocol-Version: 2.0.0" \
         -d "{
             \"author\": \"urn:li:person:$URN\",
-            \"lifecycleState\": \"PUBLISHED\",
-            \"specificContent\": {
-                \"com.linkedin.ugc.ShareContent\": {
-                    \"shareCommentary\": { \"text\": $(echo "$POST_BODY" | jq -Rs .) },
-                    \"shareMediaCategory\": \"NONE\"
-                }
+            \"commentary\": $(echo "$POST_BODY" | jq -Rs .),
+            \"visibility\": \"PUBLIC\",
+            \"distribution\": {
+                \"feedDistribution\": \"MAIN_FEED\",
+                \"targetEntities\": [],
+                \"thirdPartyDistributionChannels\": []
             },
-            \"visibility\": { \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\" }
+            \"lifecycleState\": \"PUBLISHED\",
+            \"isReshareDisabledByAuthor\": false
         }" 2>&1)
 
-    if echo "$RESULT" | jq -r '.id' >/dev/null 2>&1; then
-        ok "LinkedIn post published"
+    HTTP_CODE=$(echo "$RESULT" | tail -1)
+    BODY=$(echo "$RESULT" | sed '$d')
+
+    if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "200" ]; then
+        POST_URN=$(echo "$BODY" | jq -r '.id // empty' 2>/dev/null)
+        ok "LinkedIn post published${POST_URN:+ ($POST_URN)}"
     else
-        fail "LinkedIn post failed: $RESULT"
+        fail "LinkedIn post failed (HTTP $HTTP_CODE): $BODY"
     fi
 }
 
@@ -222,13 +229,13 @@ publish_instagram() {
     # Extract caption
     CAPTION=$(sed -n '/^## Caption$/,/^## /{ /^## /d; p; }' "$PACKAGE_DIR/instagram-post.md")
 
-    CONTAINER=$(curl -s -X POST "https://graph.facebook.com/v19.0/$IG_USER/media" \
+    CONTAINER=$(curl -s -X POST "https://graph.instagram.com/v19.0/$IG_USER/media" \
         -d "image_url=$IMAGE_URL" \
         -d "caption=$(echo "$CAPTION" | head -50 | jq -Rs .)" \
         -d "access_token=$IG_TOKEN" | jq -r '.id // empty')
 
     if [ -n "$CONTAINER" ]; then
-        RESULT=$(curl -s -X POST "https://graph.facebook.com/v19.0/$IG_USER/media_publish" \
+        RESULT=$(curl -s -X POST "https://graph.instagram.com/v19.0/$IG_USER/media_publish" \
             -d "creation_id=$CONTAINER" \
             -d "access_token=$IG_TOKEN")
         ok "Instagram post published"

@@ -135,7 +135,10 @@ curl -s -H "Authorization: Bearer $(cat ~/.config/blog-post/linkedin-token)" \
   | jq -r '.sub' > ~/.config/blog-post/linkedin-urn
 ```
 
-### Posting
+### Posting (Posts API v2 — current as of 2024+)
+
+> **Note**: The `/v2/ugcPosts` endpoint was deprecated in 2024. Use `/v2/posts` instead.
+
 ```bash
 TOKEN=$(cat ~/.config/blog-post/linkedin-token)
 URN=$(cat ~/.config/blog-post/linkedin-urn)
@@ -143,89 +146,112 @@ URN=$(cat ~/.config/blog-post/linkedin-urn)
 # Extract post body (skip markdown headers and metadata sections)
 POST_BODY=$(sed -n '/^## Post$/,/^## Post Metadata$/{ /^## /d; p; }' linkedin-post.md | sed '/^$/d')
 
-curl -s -X POST "https://api.linkedin.com/v2/ugcPosts" \
+curl -s -X POST "https://api.linkedin.com/v2/posts" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
+  -H "LinkedIn-Version: 202401" \
+  -H "X-Restli-Protocol-Version: 2.0.0" \
   -d "{
     \"author\": \"urn:li:person:$URN\",
-    \"lifecycleState\": \"PUBLISHED\",
-    \"specificContent\": {
-      \"com.linkedin.ugc.ShareContent\": {
-        \"shareCommentary\": { \"text\": $(echo "$POST_BODY" | jq -Rs .) },
-        \"shareMediaCategory\": \"NONE\"
-      }
+    \"commentary\": $(echo "$POST_BODY" | jq -Rs .),
+    \"visibility\": \"PUBLIC\",
+    \"distribution\": {
+      \"feedDistribution\": \"MAIN_FEED\",
+      \"targetEntities\": [],
+      \"thirdPartyDistributionChannels\": []
     },
-    \"visibility\": { \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\" }
+    \"lifecycleState\": \"PUBLISHED\",
+    \"isReshareDisabledByAuthor\": false
   }"
 ```
 
 ### Posting with Image
 ```bash
-# 1. Register upload
-UPLOAD_RESPONSE=$(curl -s -X POST "https://api.linkedin.com/v2/assets?action=registerUpload" \
+# 1. Initialize image upload
+INIT_RESPONSE=$(curl -s -X POST "https://api.linkedin.com/v2/images?action=initializeUpload" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
+  -H "LinkedIn-Version: 202401" \
   -d "{
-    \"registerUploadRequest\": {
-      \"recipes\": [\"urn:li:digitalmediaRecipe:feedshare-image\"],
-      \"owner\": \"urn:li:person:$URN\",
-      \"serviceRelationships\": [{
-        \"relationshipType\": \"OWNER\",
-        \"identifier\": \"urn:li:userGeneratedContent\"
-      }]
+    \"initializeUploadRequest\": {
+      \"owner\": \"urn:li:person:$URN\"
     }
   }")
 
-UPLOAD_URL=$(echo "$UPLOAD_RESPONSE" | jq -r '.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl')
-ASSET_URN=$(echo "$UPLOAD_RESPONSE" | jq -r '.value.asset')
+UPLOAD_URL=$(echo "$INIT_RESPONSE" | jq -r '.value.uploadUrl')
+IMAGE_URN=$(echo "$INIT_RESPONSE" | jq -r '.value.image')
 
-# 2. Upload image
+# 2. Upload image binary
 curl -s -X PUT "$UPLOAD_URL" \
   -H "Authorization: Bearer $TOKEN" \
   --upload-file media/thumbnails/linkedin-card.png
 
 # 3. Create post with image
-curl -s -X POST "https://api.linkedin.com/v2/ugcPosts" \
+curl -s -X POST "https://api.linkedin.com/v2/posts" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
+  -H "LinkedIn-Version: 202401" \
+  -H "X-Restli-Protocol-Version: 2.0.0" \
   -d "{
     \"author\": \"urn:li:person:$URN\",
-    \"lifecycleState\": \"PUBLISHED\",
-    \"specificContent\": {
-      \"com.linkedin.ugc.ShareContent\": {
-        \"shareCommentary\": { \"text\": $(echo "$POST_BODY" | jq -Rs .) },
-        \"shareMediaCategory\": \"IMAGE\",
-        \"media\": [{
-          \"status\": \"READY\",
-          \"media\": \"$ASSET_URN\"
-        }]
+    \"commentary\": $(echo "$POST_BODY" | jq -Rs .),
+    \"visibility\": \"PUBLIC\",
+    \"distribution\": {
+      \"feedDistribution\": \"MAIN_FEED\",
+      \"targetEntities\": [],
+      \"thirdPartyDistributionChannels\": []
+    },
+    \"content\": {
+      \"media\": {
+        \"title\": \"Post image\",
+        \"id\": \"$IMAGE_URN\"
       }
     },
-    \"visibility\": { \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\" }
+    \"lifecycleState\": \"PUBLISHED\",
+    \"isReshareDisabledByAuthor\": false
   }"
 ```
 
-## Instagram via Meta Graph API
+## Instagram via Instagram Business Login API
+
+> **Note**: Uses the Instagram Graph API via `graph.instagram.com` (not the legacy Facebook Graph API approach).
 
 ### Setup (one-time)
 1. Convert Instagram to Business/Creator account
-2. Link to a Facebook Page
-3. Create Meta app at [developers.facebook.com](https://developers.facebook.com)
-4. Add Instagram Graph API product
-5. Get long-lived access token:
+2. Create Meta app at [developers.facebook.com](https://developers.facebook.com) → Business type
+3. Add **"Manage messaging & content on Instagram"** use case
+4. Add `instagram_business_content_publish` permission (Step 1 → Go to permissions and features)
+5. Set up Instagram Business Login (Step 4) → add redirect URI: `https://broomva.tech/api/auth/callback`
+6. Add Instagram accounts as **Instagram Testers** (App roles → Roles → Add People → Instagram Tester)
+7. Accept tester invitations on Instagram (Settings → Apps and websites → Tester Invites)
+8. Run OAuth flow:
 
 ```bash
-# Short-lived → long-lived token exchange
-SHORT_TOKEN="your_short_lived_token"
-APP_SECRET="your_app_secret"
-curl -s "https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=$APP_ID&client_secret=$APP_SECRET&fb_exchange_token=$SHORT_TOKEN" \
+# 1. Open authorization URL in browser
+IG_APP_ID="your_instagram_app_id"
+open "https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=$IG_APP_ID&redirect_uri=https://broomva.tech/api/auth/callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
+
+# 2. After authorization, extract code from redirect URL and exchange for short-lived token
+CODE="paste_code_from_redirect_url"
+IG_APP_SECRET="your_instagram_app_secret"
+curl -s -X POST "https://api.instagram.com/oauth/access_token" \
+  --data-urlencode "client_id=$IG_APP_ID" \
+  --data-urlencode "client_secret=$IG_APP_SECRET" \
+  --data-urlencode "grant_type=authorization_code" \
+  --data-urlencode "redirect_uri=https://broomva.tech/api/auth/callback" \
+  --data-urlencode "code=$CODE" | jq .
+# Response includes: access_token, user_id, permissions
+
+# 3. Exchange short-lived token for long-lived token (60 days)
+SHORT_TOKEN="short_lived_token_from_step_2"
+curl -s "https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=$IG_APP_SECRET&access_token=$SHORT_TOKEN" \
   | jq -r '.access_token' > ~/.config/blog-post/instagram-token
 
-# Get IG user ID
-curl -s "https://graph.facebook.com/v19.0/me/accounts?access_token=$(cat ~/.config/blog-post/instagram-token)" \
-  | jq -r '.data[0].id' > /tmp/page_id
-curl -s "https://graph.facebook.com/v19.0/$(cat /tmp/page_id)?fields=instagram_business_account&access_token=$(cat ~/.config/blog-post/instagram-token)" \
-  | jq -r '.instagram_business_account.id' > ~/.config/blog-post/instagram-user-id
+# 4. Save user ID (from step 2 response)
+echo -n "user_id_from_step_2" > ~/.config/blog-post/instagram-user-id
+
+# 5. Verify
+curl -s "https://graph.instagram.com/v19.0/me?fields=id,username,name,account_type&access_token=$(cat ~/.config/blog-post/instagram-token)" | jq .
 ```
 
 ### Posting (image must be publicly accessible URL)
@@ -235,15 +261,22 @@ IG_USER=$(cat ~/.config/blog-post/instagram-user-id)
 IMAGE_URL="https://broomva.tech/images/writing/{slug}/hero.png"
 CAPTION=$(sed -n '/^## Caption$/,/^## /{ /^## /d; p; }' instagram-post.md)
 
-# Create container → publish
-CONTAINER=$(curl -s -X POST "https://graph.facebook.com/v19.0/$IG_USER/media" \
-  -d "image_url=$IMAGE_URL" \
-  -d "caption=$(echo "$CAPTION" | jq -Rs .)" \
-  -d "access_token=$IG_TOKEN" | jq -r '.id')
+# Create media container → publish (two-step process)
+CONTAINER=$(curl -s -X POST "https://graph.instagram.com/v19.0/$IG_USER/media" \
+  --data-urlencode "image_url=$IMAGE_URL" \
+  --data-urlencode "caption=$CAPTION" \
+  --data-urlencode "access_token=$IG_TOKEN" | jq -r '.id')
 
-curl -s -X POST "https://graph.facebook.com/v19.0/$IG_USER/media_publish" \
+curl -s -X POST "https://graph.instagram.com/v19.0/$IG_USER/media_publish" \
   -d "creation_id=$CONTAINER" \
   -d "access_token=$IG_TOKEN"
+```
+
+### Token Refresh (before 60-day expiry)
+```bash
+# Refresh long-lived token (must be done before expiry, extends another 60 days)
+curl -s "https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=$(cat ~/.config/blog-post/instagram-token)" \
+  | jq -r '.access_token' > ~/.config/blog-post/instagram-token
 ```
 
 ## Connector Status Check
