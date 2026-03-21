@@ -244,6 +244,77 @@ publish_instagram() {
     fi
 }
 
+# ── Instagram Reel Publishing ─────────────────────────────────────────────────
+
+publish_instagram_reel() {
+    if ! check_instagram; then skip "Instagram Reel: no credentials"; return; fi
+
+    log "Publishing Instagram Reel..."
+
+    IG_TOKEN=$(cat "$CONFIG_DIR/instagram-token")
+    IG_USER=$(cat "$CONFIG_DIR/instagram-user-id")
+
+    SLUG=$(basename "$PACKAGE_DIR" | sed 's/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-//')
+
+    # Find reel video (check multiple locations)
+    VIDEO_URL=""
+    for candidate in \
+        "https://broomva.tech/images/writing/$SLUG/reel-vertical.mp4" \
+        "https://broomva.tech/videos/$SLUG/reel.mp4"; do
+        HTTP=$(curl -s -o /dev/null -w "%{http_code}" "$candidate")
+        if [ "$HTTP" = "200" ]; then
+            VIDEO_URL="$candidate"
+            break
+        fi
+    done
+
+    if [ -z "$VIDEO_URL" ]; then
+        skip "Instagram Reel: no publicly hosted video found"
+        return
+    fi
+
+    # Extract reel caption from instagram-reel.md or instagram-post.md
+    CAPTION=""
+    if [ -f "$PACKAGE_DIR/instagram-reel.md" ]; then
+        CAPTION=$(sed -n '/^## Caption\|^##.*CTA/,/^## /{ /^## /d; p; }' "$PACKAGE_DIR/instagram-reel.md" | head -30)
+    fi
+    if [ -z "$CAPTION" ] && [ -f "$PACKAGE_DIR/instagram-post.md" ]; then
+        CAPTION=$(sed -n '/^## Caption$/,/^## /{ /^## /d; p; }' "$PACKAGE_DIR/instagram-post.md" | head -30)
+    fi
+
+    # Create REELS container
+    CONTAINER=$(curl -s -X POST "https://graph.instagram.com/v19.0/$IG_USER/media" \
+        --data-urlencode "media_type=REELS" \
+        --data-urlencode "video_url=$VIDEO_URL" \
+        --data-urlencode "caption=$CAPTION" \
+        --data-urlencode "share_to_feed=true" \
+        --data-urlencode "access_token=$IG_TOKEN" | jq -r '.id // empty')
+
+    if [ -z "$CONTAINER" ]; then
+        fail "Instagram Reel: container creation failed"
+        return
+    fi
+
+    # Poll for FINISHED status
+    for i in $(seq 1 30); do
+        sleep 10
+        STATUS=$(curl -s "https://graph.instagram.com/v19.0/$CONTAINER?fields=status_code&access_token=$IG_TOKEN" | jq -r '.status_code // empty')
+        if [ "$STATUS" = "FINISHED" ]; then
+            RESULT=$(curl -s -X POST "https://graph.instagram.com/v19.0/$IG_USER/media_publish" \
+                -d "creation_id=$CONTAINER" -d "access_token=$IG_TOKEN")
+            POST_ID=$(echo "$RESULT" | jq -r '.id // empty')
+            if [ -n "$POST_ID" ]; then
+                ok "Instagram Reel published: $POST_ID"
+                return
+            fi
+        elif [ "$STATUS" = "ERROR" ]; then
+            fail "Instagram Reel: video processing failed"
+            return
+        fi
+    done
+    fail "Instagram Reel: timed out waiting for video processing"
+}
+
 # ── broomva.tech Publishing ──────────────────────────────────────────────────
 
 publish_broomva_tech() {
@@ -295,6 +366,7 @@ case "$PLATFORM" in
         publish_x_post
         publish_linkedin
         publish_instagram
+        publish_instagram_reel
         ;;
     x)
         publish_x_thread
@@ -311,6 +383,9 @@ case "$PLATFORM" in
         ;;
     instagram)
         publish_instagram
+        ;;
+    instagram-reel)
+        publish_instagram_reel
         ;;
     broomva-tech)
         publish_broomva_tech

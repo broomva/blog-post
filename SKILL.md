@@ -13,12 +13,14 @@ This skill **orchestrates** — it does not re-implement what already exists:
 
 | Skill | Role in Pipeline |
 |-------|-----------------|
-| `/content-creation` | Storytelling frameworks, visual content strategy, social distribution patterns, AI asset generation (Nano Banana, Veo 3.1, TTS), Remotion video |
+| `/content-creation` | Storytelling frameworks, visual content strategy, social distribution patterns, AI asset generation (Imagen 4.0, Veo 3.1, TTS), Remotion video |
 | `/deep-research` | Multi-source research when topic requires verified claims or data |
 | `/agent-browser` | Screenshots, reference extraction, web research |
 | `/pencil` | Design social cards, carousel slides, diagrams |
 | `/arcan-glass` | BroomVA brand styling for visual assets |
 | `/remotion-best-practices` | Video composition, spring animations, sequencing |
+| `/google-veo` | Veo 3.1 cinematic prompting — camera vocabulary, shot composition, style direction |
+| `/subtitle-generation` | Burn-in subtitles for reels (80% watch muted) |
 | `/prompt-library` | Reusable prompts for content generation |
 | `/competitor-intel` | Market context when writing about products or strategy |
 
@@ -449,6 +451,31 @@ Before completing, validate:
 
 See [references/quality-checklist.md](references/quality-checklist.md) for the full validation checklist.
 
+### Reel Production Quality Gates
+
+When producing Instagram Reels (via Veo 3.1 + ffmpeg):
+- [ ] Hook grabs attention in first 3 seconds (visual movement, NOT just text)
+- [ ] Subtitles burned in (80% watch muted)
+- [ ] No static shot longer than 5 seconds
+- [ ] Audio present (narration, ambient, or music — never silence)
+- [ ] CTA in final 3 seconds
+- [ ] 9:16 vertical, `-movflags +faststart`
+- [ ] Duration 15-45 seconds
+
+See [references/reel-production.md](references/reel-production.md) for Veo 3.1 prompting (5-part formula, camera vocabulary), subtitle generation, and the full production pipeline.
+
+## Self-Evolution
+
+This skill improves with every use. See [references/self-evolution.md](references/self-evolution.md) for the full protocol.
+
+**After every publish**: Track which hooks, formats, and timings performed best. Promote winners to templates. Annotate losers.
+
+**Feedback loop**: `PUBLISH → MEASURE (48h) → EXTRACT PATTERNS → UPDATE SKILL → NEXT PUBLISH`
+
+**Content pillars**: Build Logs, Agent Architecture, Meta-Content, Open Source, Contrarian Takes. Each pillar has an optimal platform mix.
+
+**Compounding**: New skills are integrated when they handle a task the pipeline currently does manually, have 100+ community installs, and don't bloat SKILL.md beyond 600 lines.
+
 ## Quick Start
 
 ```
@@ -457,5 +484,5 @@ User: /blog-post "Building an Agent OS in Rust" — targeting developers,
 
 Agent: [Creates brief → researches if needed → selects ABT angle →
        outlines → writes long-form → adapts for X/LinkedIn/IG →
-       generates media prompts → packages under /broomva/posts/2026-03-20-agent-os-rust/]
+       generates media + reels via Veo 3.1 → publishes via xurl/curl/git]
 ```
