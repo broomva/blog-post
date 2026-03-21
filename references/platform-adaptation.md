@@ -4,6 +4,48 @@
 
 The same *message* expressed in platform-*native* language. Never copy-paste and truncate. Each platform has its own attention economy, consumption pattern, and audience expectation.
 
+## X Blog Post (Long-Form Article)
+
+**Purpose**: Full long-form article published natively on X. Keeps users on-platform (algorithm rewards this). Rich inline media — images, GIFs, video clips play natively.
+
+**How it differs from broomva.tech post**:
+- More conversational and opinionated (less documentation-style)
+- Higher media density — 1 visual per section (~150-200 words)
+- Shorter paragraphs (2-3 sentences max)
+- Personal voice ("I built this" not "one could build this")
+- Provocative hook over informational hook
+
+**Media-first rule**: Every section must have at least one visual asset:
+- Hero image (Imagen 4.0 — striking, thumbnail-worthy)
+- Architecture diagrams, flowcharts
+- GIFs (terminal recordings, UI flows, demos)
+- Short video clips (8-15s Veo 3.1)
+- Code screenshots (syntax-highlighted, not raw text)
+- Stat cards and data visualizations
+
+**Structure**:
+```
+Hero image (full-width, stops scrolling)
+Hook (1-2 sentences — provocative or meta)
+---
+Section 1: Setup (2-3 paragraphs + visual)
+Section 2: Core insight (teaching + diagram/code + optional GIF)
+Section 3: Evidence (data + stat card)
+Section 4: How (walkthrough + video/GIF)
+Closing (1 paragraph + natural CTA)
+```
+
+**Hook formulas**:
+- "I [did something]. Here's everything I learned."
+- "This [artifact] was built by the thing it describes."
+- "[Surprising stat]. And I can prove it."
+- "Everyone is doing [X]. We did [Y] instead."
+
+**What works**: Strong opinions backed by evidence, multimedia-dense sections, personal narrative
+**What fails**: Documentation tone, walls of text without visuals, vague claims, generic AI art
+
+See [references/x-blog-post.md](x-blog-post.md) for the full guide.
+
 ## X Single Post (280 chars)
 
 **Purpose**: Standalone insight that earns engagement (likes, replies, reposts).

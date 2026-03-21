@@ -170,6 +170,7 @@ Use [templates/substack-post.md](templates/substack-post.md). Standard Markdown,
 
 | Platform | Length | Format | Hook Style | Media | CTA Style |
 |----------|--------|--------|-----------|-------|----------|
+| X blog post | Freeform (no limit) | Long-form article | Narrative hook + hero image | Images, video, GIFs inline | Link + engagement |
 | X post | 280 chars | Single tweet | Punchy stat or claim | 1 image | Implied (engagement) |
 | X thread | 5-8 tweets | Numbered thread | Scale proof or contrarian | Image every 2-3 tweets | Link in final tweet |
 | LinkedIn | 1300 chars | Paragraphs + bullets | First 210 chars = hook | 1 image or document carousel | Direct ask |
@@ -180,6 +181,8 @@ Use [templates/substack-post.md](templates/substack-post.md). Standard Markdown,
 
 See [references/platform-adaptation.md](references/platform-adaptation.md) for detailed per-platform strategies.
 
+**X Blog Post** — Full long-form article published directly on X (formerly "Twitter Articles"). Freeform length — can match or exceed the broomva.tech post. Supports inline images, videos, GIFs, and rich formatting. Unlike the broomva.tech post, the X blog post is written for *X's audience and algorithm* — more conversational, more opinionated, more multimedia-dense. Every section should be accompanied by a visual (image, diagram, GIF, or video clip). The hero image is critical — it's the thumbnail that determines clicks. Use Imagen 4.0 for hero + supporting images, Veo 3.1 clips for inline video, and ffmpeg GIFs for demos. See [references/x-blog-post.md](references/x-blog-post.md).
+
 **X Post** — Extract the single most surprising or provocative insight. Make it self-contained. No links unless CTA.
 
 **X Thread** — Re-tell the story in tweet-sized beats. Not an outline — each tweet must stand alone while building momentum. Hook formula from `/content-creation`: spend 50% of effort on tweet 1.
@@ -188,9 +191,9 @@ See [references/platform-adaptation.md](references/platform-adaptation.md) for d
 
 **Instagram Post** — Design a carousel: cover slide with hook, 1 insight per slide (flashcard style, not paragraphs), stat slide, CTA slide. Caption tells the story; slides show the highlights.
 
-**Instagram Reel** — Write a script with: 3-second visual hook, problem statement (5s), key insight (10-15s), evidence or demo (10-15s), CTA (5s). Vertical 9:16 format.
+**Instagram Reel** — Write a script with: 3-second visual hook, problem statement (5s), key insight (10-15s), evidence or demo (10-15s), CTA (5s). Vertical 9:16 format. See [references/reel-production.md](references/reel-production.md) for Veo 3.1 prompting and subtitle burn-in.
 
-**Output**: `x-post.md`, `x-thread.md`, `linkedin-post.md`, `instagram-post.md`, `instagram-reel.md`
+**Output**: `x-blog-post.md`, `x-post.md`, `x-thread.md`, `linkedin-post.md`, `instagram-post.md`, `instagram-reel.md`
 
 ## Phase 6: Multimedia Production
 
@@ -394,6 +397,7 @@ Each invocation creates a package at `/broomva/posts/{YYYY-MM-DD}-{slug}/`:
 ├── outline.md                   # Content outline with angle + framework
 ├── broomva-tech-post.mdx        # Primary long-form (broomva.tech)
 ├── substack-post.md             # Alternative long-form (if requested)
+├── x-blog-post.md               # X long-form article (multimedia-rich)
 ├── x-post.md                    # X single post
 ├── x-thread.md                  # X thread (5-8 tweets)
 ├── linkedin-post.md             # LinkedIn post

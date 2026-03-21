@@ -27,6 +27,7 @@ Each invocation produces a self-contained package at:
 ├── broomva-tech-post.mdx        # Primary long-form (broomva.tech)
 ├── substack-post.md             # Alternative long-form (if requested)
 │
+├── x-blog-post.md               # X long-form article (multimedia-rich, freeform length)
 ├── x-post.md                    # X single post (280 chars)
 ├── x-thread.md                  # X thread (5-8 tweets)
 ├── linkedin-post.md             # LinkedIn post
